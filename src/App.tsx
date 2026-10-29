@@ -21,6 +21,30 @@ type Pedido = {
   estado: string;
 };
 
+// Estados a los que se puede cambiar un pedido (EstadoPedido en ms-pedidos, sin CREADO)
+const ESTADOS = ['ACEPTADO', 'EN_PREPARACION', 'DESPACHADO', 'ENTREGADO', 'CANCELADO'];
+
+// Colas de RabbitMQ que reciben cada estado según los bindings de ex.pedidos
+const COLAS_POR_ESTADO: Record<string, string[]> = {
+  ACEPTADO: ['q.cmd.email'],
+  EN_PREPARACION: ['q.cmd.email'],
+  DESPACHADO: ['q.cmd.email', 'q.cmd.sms'],
+  ENTREGADO: ['q.cmd.email', 'q.cmd.facturacion'],
+  CANCELADO: ['q.cmd.email', 'q.cmd.sms'],
+};
+
+// Regla de negocio de ms-pedidos: un pedido CREADO no puede pasar directo a DESPACHADO
+function transicionPermitida(actual: string, nuevo: string) {
+  return !(actual === 'CREADO' && nuevo === 'DESPACHADO');
+}
+
+function motivoRechazo(actual: string, nuevo: string) {
+  if (!transicionPermitida(actual, nuevo)) {
+    return 'un pedido CREADO debe pasar por ACEPTADO antes de ser despachado.';
+  }
+  return 'ms-pedidos rechazó el cambio. Revisa sus logs para ver el detalle.';
+}
+
 function PrivateTabs() {
   return (
     <nav className="page-tabs" aria-label="Secciones privadas">
@@ -137,7 +161,7 @@ function HomePage() {
 function PerfilPage() {
   const { instance, accounts, inProgress } = useMsal();
   const [perfil, setPerfil] = useState<{
-    rol?: 'admin' | 'USER';
+    rol?: string;
     nombre?: string;
     email?: string;
   } | null>(null);
@@ -145,7 +169,7 @@ function PerfilPage() {
   const [ocupado, setOcupado] = useState(false);
   const account = instance.getActiveAccount() ?? accounts[0];
   const bloqueado = ocupado || inProgress !== InteractionStatus.None;
-  const esAdmin = perfil?.rol === 'admin';
+  const esAdmin = perfil?.rol?.toUpperCase() === 'ADMIN';
 
   useEffect(() => {
     document.title = 'Wepay | Perfil';
@@ -165,7 +189,7 @@ function PerfilPage() {
         throw new Error(`Error perfil ${response.status}: ${texto}`);
       }
       const data = JSON.parse(texto) as {
-        rol?: 'admin' | 'USER';
+        rol?: string;
         nombre?: string;
         email?: string;
       };
@@ -408,6 +432,53 @@ function PedidosPage() {
     }
   }
 
+  const [estadoElegido, setEstadoElegido] = useState<Record<number, string>>({});
+  const [mensaje, setMensaje] = useState('');
+
+  async function cambiarEstado(pedido: Pedido) {
+    if (!account) return;
+    const id = pedido.id;
+    const estado = estadoElegido[id] ?? ESTADOS[0];
+    if (!transicionPermitida(pedido.estado, estado)) {
+      setMensaje('');
+      setSalida(`No se puede cambiar el pedido #${id} a ${estado}: ${motivoRechazo(pedido.estado, estado)}`);
+      return;
+    }
+    setOcupado(true);
+    setSalida('');
+    setMensaje('');
+    try {
+      const response = await fetchConToken(instance, account, `/api/pedidos/${id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: estado }),
+      });
+      const texto = await response.text();
+      if (response.status === 403) {
+        throw new Error('Solo un administrador puede cambiar el estado de un pedido.');
+      }
+      if (response.status >= 500) {
+        throw new Error(
+          `No se pudo cambiar el pedido #${id} de ${pedido.estado} a ${estado}: ` +
+            motivoRechazo(pedido.estado, estado),
+        );
+      }
+      if (!response.ok) {
+        throw new Error(`Error al cambiar estado ${response.status}: ${texto}`);
+      }
+      const colas = COLAS_POR_ESTADO[estado] ?? [];
+      setMensaje(
+        `Pedido #${id} cambiado a ${estado}. Evento publicado en ex.pedidos con routing key ` +
+          `pedido.estado.${estado.toLowerCase()} -> ${colas.join(', ')}`,
+      );
+      await consultarPedidos();
+    } catch (error) {
+      setSalida(error instanceof Error ? error.message : String(error));
+    } finally {
+      setOcupado(false);
+    }
+  }
+
   async function crearPedidoDePrueba() {
     if (!account) return;
     setOcupado(true);
@@ -477,6 +548,7 @@ function PedidosPage() {
         </div>
 
         {salida ? <p className="catalog-error">{salida}</p> : null}
+        {mensaje ? <p className="catalog-success">{mensaje}</p> : null}
         {pedidos.length > 0 ? (
           <div className="catalog-grid">
             {pedidos.map((pedido) => (
@@ -495,6 +567,39 @@ function PedidosPage() {
                     }).format(pedido.total)}
                   </strong>
                 </div>
+                <div className="estado-control">
+                  <select
+                    className="estado-select"
+                    aria-label={`Nuevo estado del pedido ${pedido.id}`}
+                    value={estadoElegido[pedido.id] ?? ESTADOS[0]}
+                    disabled={bloqueado}
+                    onChange={(e) =>
+                      setEstadoElegido({ ...estadoElegido, [pedido.id]: e.target.value })
+                    }
+                  >
+                    {ESTADOS.map((estado) => (
+                      <option
+                        key={estado}
+                        value={estado}
+                        disabled={!transicionPermitida(pedido.estado, estado)}
+                      >
+                        {transicionPermitida(pedido.estado, estado)
+                          ? estado
+                          : `${estado} (primero ACEPTADO)`}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    className="ghost-button"
+                    disabled={bloqueado}
+                    onClick={() => void cambiarEstado(pedido)}
+                  >
+                    Cambiar estado
+                  </button>
+                </div>
+                <span className="estado-colas">
+                  Va a: {(COLAS_POR_ESTADO[estadoElegido[pedido.id] ?? ESTADOS[0]] ?? []).join(', ')}
+                </span>
               </article>
             ))}
           </div>

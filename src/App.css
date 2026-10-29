@@ -295,6 +295,47 @@
   background: rgba(155, 35, 55, 0.14);
 }
 
+.catalog-success {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px solid rgba(90, 215, 255, 0.4);
+  border-radius: 16px;
+  color: #b8ecff;
+  background: rgba(49, 140, 248, 0.12);
+  font-family: var(--mono);
+  font-size: 0.86rem;
+}
+
+.estado-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.estado-select {
+  flex: 1 1 160px;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-strong);
+  font: inherit;
+}
+
+.estado-select option {
+  color: #04111d;
+}
+
+.estado-colas {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  opacity: 0.7;
+}
+
 .catalog-empty {
   padding: 42px 20px;
   border: 1px dashed var(--border-soft);
