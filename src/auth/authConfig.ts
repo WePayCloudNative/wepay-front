@@ -12,7 +12,9 @@ export const msalConfig: Configuration = {
     postLogoutRedirectUri: window.location.origin,
   },
   cache: {
-    cacheLocation: 'sessionStorage',
+    // localStorage comparte la sesión entre pestañas del mismo navegador.
+    // Con sessionStorage, cada pestaña nueva pedía iniciar sesión otra vez.
+    cacheLocation: 'localStorage',
   },
 };
 
