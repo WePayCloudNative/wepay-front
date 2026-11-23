@@ -6,24 +6,42 @@ export type EstadoPedido =
   | 'ENTREGADO'
   | 'CANCELADO';
 
+/** Un producto dentro de un pedido (ms-pedidos lo guarda con el precio del momento de la compra). */
+export type DetallePedido = {
+  productoId: number | null;
+  nombreProducto: string;
+  precioUnitario: number;
+  cantidad: number;
+};
+
 export type Pedido = {
   id: number;
   usuarioOid: string;
   total: number;
   fechaRegistro: string;
   estado: EstadoPedido;
+  /** Puede faltar si el BFF o ms-pedidos desplegados aún no la envían. */
+  detalles?: DetallePedido[] | null;
 };
 
 export type Producto = {
+  id: number;
   name: string;
   description: string;
   price: number;
+  categoria?: string | null;
+  imagenUrl?: string | null;
+  /** Precio antes de la oferta; null si el producto no está en oferta. */
+  precioAnterior?: number | null;
 };
 
 export type ItemCarrito = {
+  productoId: number;
   nombre: string;
   precio: number;
   cantidad: number;
+  imagenUrl?: string | null;
+  categoria?: string | null;
 };
 
 export type Perfil = {
@@ -53,13 +71,41 @@ export const ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
   CANCELADO: 'Cancelado',
 };
 
+/** Cómo se le explica cada estado al cliente, sin lenguaje técnico. */
+export const ESTADO_PARA_CLIENTE: Record<EstadoPedido, { titulo: string; detalle: string }> = {
+  CREADO: {
+    titulo: 'Recibimos tu pedido',
+    detalle: 'Estamos validando el pago. Te avisaremos apenas se confirme.',
+  },
+  ACEPTADO: {
+    titulo: 'Pago confirmado',
+    detalle: 'Generamos tu boleta y el pedido pasó a la fila de preparación.',
+  },
+  EN_PREPARACION: {
+    titulo: 'Preparando tu pedido',
+    detalle: 'Estamos reuniendo y embalando tus productos.',
+  },
+  DESPACHADO: {
+    titulo: 'En camino',
+    detalle: 'Tu pedido salió de nuestra bodega. Te enviamos un SMS con el aviso.',
+  },
+  ENTREGADO: {
+    titulo: 'Entregado',
+    detalle: 'Tu pedido llegó. Que lo disfrutes.',
+  },
+  CANCELADO: {
+    titulo: 'Pedido cancelado',
+    detalle: 'Este pedido no seguirá avanzando.',
+  },
+};
+
 /** Texto del botón que lleva un pedido a cada estado (vista de administración). */
 export const ACCION_HACIA: Record<EstadoPedido, string> = {
   CREADO: 'Crear',
-  ACEPTADO: 'Aceptar',
-  EN_PREPARACION: 'Preparar',
+  ACEPTADO: 'Aceptar pago',
+  EN_PREPARACION: 'Pasar a preparación',
   DESPACHADO: 'Despachar',
-  ENTREGADO: 'Entregar',
+  ENTREGADO: 'Marcar entregado',
   CANCELADO: 'Cancelar',
 };
 
@@ -76,12 +122,27 @@ export const TRANSICIONES: Record<EstadoPedido, EstadoPedido[]> = {
   CANCELADO: [],
 };
 
+/** El cliente solo puede cancelar antes de que el pedido entre a preparación (igual que el BFF). */
+export const CANCELABLES_POR_CLIENTE: EstadoPedido[] = ['CREADO', 'ACEPTADO'];
+
+/** Estados en que el pedido ya tiene boleta emitida (se factura al aceptar). */
+export const ESTADOS_CON_BOLETA: EstadoPedido[] = [
+  'ACEPTADO',
+  'EN_PREPARACION',
+  'DESPACHADO',
+  'ENTREGADO',
+];
+
 export function estadosSiguientes(actual: EstadoPedido): EstadoPedido[] {
   return TRANSICIONES[actual] ?? [];
 }
 
 export function esEstadoFinal(estado: EstadoPedido): boolean {
   return estadosSiguientes(estado).length === 0;
+}
+
+export function unidadesDe(pedido: Pedido): number {
+  return (pedido.detalles ?? []).reduce((suma, d) => suma + d.cantidad, 0);
 }
 
 /** ms-clientes devuelve el rol en minúsculas ("admin" / "user"). */

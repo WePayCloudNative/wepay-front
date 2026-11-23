@@ -1,164 +1,142 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
-import { mensajeDe } from '../../api/cliente';
-import { useApi } from '../../api/useApi';
-import { useCarrito } from '../../carrito/carrito';
+import { useCatalogo } from '../../catalogo/useCatalogo';
 import Aviso from '../../components/Aviso';
 import EstadoCarga from '../../components/EstadoCarga';
-import type { Pedido, Producto } from '../../domain/pedidos';
-import { formatearPesos } from '../../utils/formato';
+import Icono from '../../components/Icono';
+import TarjetaProducto from '../../components/TarjetaProducto';
+import { categoriaDe, categoriasDe, coincideBusqueda } from '../../domain/catalogo';
+
+type Orden = 'destacados' | 'menor' | 'mayor';
 
 export default function Tienda() {
-  const api = useApi();
-  const carrito = useCarrito();
+  const { productos, error, reintentar } = useCatalogo();
+  const [parametros, setParametros] = useSearchParams();
+  const buscadorRef = useRef<HTMLInputElement>(null);
 
-  const [productos, setProductos] = useState<Producto[] | null>(null);
-  const [errorCatalogo, setErrorCatalogo] = useState('');
-  const [enviando, setEnviando] = useState(false);
-  const [errorCompra, setErrorCompra] = useState('');
-  const [pedidoCreado, setPedidoCreado] = useState<Pedido | null>(null);
+  const categoria = parametros.get('categoria') ?? '';
+  const busqueda = parametros.get('q') ?? '';
+  const orden = (parametros.get('orden') as Orden | null) ?? 'destacados';
 
   useEffect(() => {
-    document.title = 'Wepay | Tienda';
-    let activo = true;
-    api
-      .obtenerProductos()
-      .then((lista) => {
-        if (activo) setProductos(lista);
-      })
-      .catch((e: unknown) => {
-        if (activo) setErrorCatalogo(mensajeDe(e));
-      });
-    return () => {
-      activo = false;
-    };
-  }, [api]);
+    document.title = 'WePay | Tienda';
+  }, []);
 
-  async function confirmarCompra() {
-    setEnviando(true);
-    setErrorCompra('');
-    try {
-      const pedido = await api.crearPedido(carrito.items);
-      carrito.vaciar();
-      setPedidoCreado(pedido);
-    } catch (e) {
-      setErrorCompra(mensajeDe(e));
-    } finally {
-      setEnviando(false);
+  // El ícono de búsqueda del encabezado llega con ?buscar=1
+  useEffect(() => {
+    if (parametros.get('buscar')) {
+      buscadorRef.current?.focus();
     }
+  }, [parametros]);
+
+  function cambiar(clave: string, valor: string) {
+    const siguientes = new URLSearchParams(parametros);
+    siguientes.delete('buscar');
+    if (valor) {
+      siguientes.set(clave, valor);
+    } else {
+      siguientes.delete(clave);
+    }
+    setParametros(siguientes, { replace: true });
   }
 
-  function cantidadEnCarrito(producto: Producto) {
-    return carrito.items.find((item) => item.nombre === producto.name)?.cantidad ?? 0;
-  }
+  const categorias = useMemo(() => categoriasDe(productos ?? []), [productos]);
+
+  const visibles = useMemo(() => {
+    const filtrados = (productos ?? []).filter(
+      (p) => (!categoria || categoriaDe(p) === categoria) && coincideBusqueda(p, busqueda),
+    );
+    if (orden === 'menor') return [...filtrados].sort((a, b) => a.price - b.price);
+    if (orden === 'mayor') return [...filtrados].sort((a, b) => b.price - a.price);
+    return filtrados;
+  }, [productos, categoria, busqueda, orden]);
 
   return (
-    <div className="tienda">
-      <section className="tarjeta">
-        <div className="encabezado">
-          <div>
-            <p className="eyebrow">Catálogo</p>
-            <h1>Productos disponibles</h1>
+    <>
+      <header className="cabecera-pagina">
+        <h1>Nuestros productos</h1>
+        <p>Todo lo que necesitas para tu escritorio, con despacho gratis.</p>
+      </header>
+
+      <div className="barra-filtros">
+        <div className="contenedor barra-filtros__fila">
+          <div className="pestanas" role="tablist" aria-label="Categorías">
+            {['', ...categorias].map((c) => (
+              <button
+                key={c || 'todas'}
+                role="tab"
+                aria-selected={categoria === c}
+                className={`pestana ${categoria === c ? 'pestana--activa' : ''}`}
+                onClick={() => cambiar('categoria', c)}
+              >
+                {c || 'Todos'}
+              </button>
+            ))}
+          </div>
+
+          <div className="barra-filtros__herramientas">
+            <label className="buscador">
+              <Icono nombre="buscar" tamano={16} />
+              <span className="sr-only">Buscar productos</span>
+              <input
+                ref={buscadorRef}
+                type="search"
+                placeholder="Buscar"
+                value={busqueda}
+                onChange={(e) => cambiar('q', e.target.value)}
+              />
+            </label>
+            <label className="selector">
+              <span className="sr-only">Ordenar</span>
+              <select value={orden} onChange={(e) => cambiar('orden', e.target.value === 'destacados' ? '' : e.target.value)}>
+                <option value="destacados">Destacados</option>
+                <option value="menor">Menor precio</option>
+                <option value="mayor">Mayor precio</option>
+              </select>
+            </label>
+            {productos ? (
+              <span className="contador">
+                {visibles.length} {visibles.length === 1 ? 'producto' : 'productos'}
+              </span>
+            ) : null}
           </div>
         </div>
+      </div>
 
-        {errorCatalogo ? <Aviso tipo="error">{errorCatalogo}</Aviso> : null}
-        {!productos && !errorCatalogo ? <EstadoCarga texto="Cargando catálogo..." /> : null}
+      <section className="seccion seccion--ajustada">
+        <div className="contenedor">
+          {error ? (
+            <Aviso tipo="error">
+              {error}{' '}
+              <button className="enlace-sutil" onClick={reintentar}>
+                Reintentar
+              </button>
+            </Aviso>
+          ) : null}
+          {!productos && !error ? <EstadoCarga texto="Cargando productos..." /> : null}
 
-        {productos ? (
-          <div className="grilla-productos">
-            {productos.map((producto) => {
-              const enCarrito = cantidadEnCarrito(producto);
-              return (
-                <article className="producto" key={producto.name}>
-                  <h2>{producto.name}</h2>
-                  <p className="texto-suave">{producto.description}</p>
-                  <div className="producto__pie">
-                    <strong className="precio">{formatearPesos(producto.price)}</strong>
-                    <button
-                      className="boton boton--chico boton--primario"
-                      onClick={() => {
-                        setPedidoCreado(null);
-                        carrito.agregar(producto);
-                      }}
-                    >
-                      {enCarrito > 0 ? `Agregar otro (${enCarrito})` : 'Agregar'}
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        ) : null}
-      </section>
-
-      <aside className="tarjeta carrito">
-        <p className="eyebrow">Tu compra</p>
-        <h2>Carrito</h2>
-
-        {pedidoCreado ? (
-          <Aviso tipo="exito">
-            Pedido <strong>#{pedidoCreado.id}</strong> creado por{' '}
-            <strong>{formatearPesos(pedidoCreado.total)}</strong>. Puedes seguir su avance en{' '}
-            <Link to="/mis-pedidos">Mis pedidos</Link>.
-          </Aviso>
-        ) : null}
-        {errorCompra ? <Aviso tipo="error">{errorCompra}</Aviso> : null}
-
-        {carrito.items.length === 0 ? (
-          <p className="vacio">Aún no agregas productos.</p>
-        ) : (
-          <>
-            <ul className="carrito__lista">
-              {carrito.items.map((item) => (
-                <li className="carrito__item" key={item.nombre}>
-                  <div>
-                    <strong>{item.nombre}</strong>
-                    <span className="texto-suave">{formatearPesos(item.precio)} c/u</span>
-                  </div>
-                  <div className="cantidad">
-                    <button
-                      className="boton boton--chico"
-                      aria-label={`Quitar una unidad de ${item.nombre}`}
-                      onClick={() => carrito.cambiarCantidad(item.nombre, item.cantidad - 1)}
-                    >
-                      −
-                    </button>
-                    <span>{item.cantidad}</span>
-                    <button
-                      className="boton boton--chico"
-                      aria-label={`Agregar una unidad de ${item.nombre}`}
-                      onClick={() => carrito.cambiarCantidad(item.nombre, item.cantidad + 1)}
-                    >
-                      +
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-
-            <div className="carrito__total">
-              <span>Total</span>
-              <strong className="precio">{formatearPesos(carrito.total)}</strong>
+          {productos && visibles.length === 0 ? (
+            <div className="vacio-grande">
+              <p>No encontramos productos{busqueda ? ` para "${busqueda}"` : ''}.</p>
+              <button
+                className="boton boton--secundario"
+                onClick={() => setParametros(new URLSearchParams(), { replace: true })}
+              >
+                Ver todos los productos
+              </button>
             </div>
+          ) : null}
 
-            <button
-              className="boton boton--primario boton--ancho"
-              disabled={enviando}
-              onClick={() => void confirmarCompra()}
-            >
-              {enviando ? 'Confirmando...' : 'Confirmar compra'}
-            </button>
-            <p className="nota">
-              Pago simulado: no se cobra nada. Al confirmar se crea el pedido en estado Creado.
-            </p>
-            <button className="boton boton--fantasma boton--ancho" onClick={carrito.vaciar}>
-              Vaciar carrito
-            </button>
-          </>
-        )}
-      </aside>
-    </div>
+          {visibles.length > 0 ? (
+            <div className="grilla-productos">
+              {visibles.map((producto) => (
+                <TarjetaProducto key={producto.id} producto={producto} />
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </section>
+    </>
   );
 }

@@ -9,51 +9,51 @@ export default function Perfil() {
   const { perfil, esAdmin, cargando, error, recargarPerfil } = useSesion();
 
   useEffect(() => {
-    document.title = 'Wepay | Perfil';
+    document.title = 'WePay | Mi perfil';
   }, []);
 
   return (
-    <section className="tarjeta perfil">
-      <p className="eyebrow">Tu cuenta</p>
-      <h1>Perfil</h1>
+    <div className="contenedor seccion perfil">
+      <h1 className="titulo-pagina">Mi perfil</h1>
 
       {cargando ? <EstadoCarga texto="Cargando perfil..." /> : null}
       {error ? (
         <Aviso tipo="error">
           {error}{' '}
-          <button className="boton boton--chico" onClick={recargarPerfil}>
+          <button className="enlace-sutil" onClick={recargarPerfil}>
             Reintentar
           </button>
         </Aviso>
       ) : null}
 
       {perfil ? (
-        <dl className="datos">
-          <div>
-            <dt>Nombre</dt>
-            <dd>{perfil.nombre || '—'}</dd>
-          </div>
-          <div>
-            <dt>Correo</dt>
-            <dd>{perfil.email || '—'}</dd>
-          </div>
-          <div>
-            <dt>Rol</dt>
-            <dd>{esAdmin ? 'Administrador' : 'Cliente'}</dd>
-          </div>
-          <div>
-            <dt>Identificador (OID de Entra ID)</dt>
-            <dd className="mono">{perfil.oid}</dd>
-          </div>
-        </dl>
+        <section className="panel">
+          <dl className="datos">
+            <div>
+              <dt>Nombre</dt>
+              <dd>{perfil.nombre || '—'}</dd>
+            </div>
+            <div>
+              <dt>Correo</dt>
+              <dd>{perfil.email || '—'}</dd>
+            </div>
+            <div>
+              <dt>Tipo de cuenta</dt>
+              <dd>{esAdmin ? 'Administrador' : 'Cliente'}</dd>
+            </div>
+          </dl>
+          <p className="nota">
+            Tu cuenta se administra con Microsoft. Para cambiar tu nombre o correo, hazlo en tu cuenta
+            Microsoft.
+          </p>
+        </section>
       ) : null}
 
       {esAdmin ? (
         <p className="nota">
-          Tu cuenta tiene permisos de administración.{' '}
-          <Link to="/admin/pedidos">Ir al panel de administración</Link>
+          Tienes permisos de administración. <Link to="/admin">Ir al panel de administración</Link>
         </p>
       ) : null}
-    </section>
+    </div>
   );
 }

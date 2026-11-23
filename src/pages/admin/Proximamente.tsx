@@ -10,7 +10,7 @@ type ProximamenteProps = {
 /** Sección reservada para los microservicios con Kafka (auditoría y reportes). */
 export default function Proximamente({ titulo, descripcion, servicio, endpoints }: ProximamenteProps) {
   useEffect(() => {
-    document.title = `Wepay | ${titulo}`;
+    document.title = `WePay | ${titulo}`;
   }, [titulo]);
 
   return (

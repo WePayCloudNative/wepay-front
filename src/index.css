@@ -1,23 +1,35 @@
+/* Tokens de WePay: tienda oscura y sobria, con un solo acento latón. */
 :root {
-  --text-body: #9aa4b2;
-  --text-muted: #7b8492;
-  --text-strong: #edf3fb;
-  --bg: #05070d;
-  --border-soft: rgba(255, 255, 255, 0.08);
-  --accent: #5ad7ff;
-  --shadow-card:
-    0 24px 64px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  --sans: 'Trebuchet MS', 'Segoe UI', sans-serif;
-  --heading: 'Trebuchet MS', 'Segoe UI', sans-serif;
-  --mono: ui-monospace, SFMono-Regular, Consolas, monospace;
+  --negro: #101216;
+  --carbon: #171a1f;
+  --grafito: #1f232a;
+  --grafito-alto: #272c34;
+  --linea: #2c313a;
+  --linea-suave: #23272e;
+  --hueso: #efede8;
+  --niebla: #a7acb4;
+  --tenue: #737983;
+  --laton: #c9a46a;
+  --laton-suave: rgba(201, 164, 106, 0.14);
 
-  font: 16px/1.55 var(--sans);
+  --exito: #86c3a1;
+  --exito-fondo: rgba(134, 195, 161, 0.1);
+  --peligro: #e08a7e;
+  --peligro-fondo: rgba(224, 138, 126, 0.1);
+  --info: #9db7de;
+  --info-fondo: rgba(157, 183, 222, 0.1);
+
+  --fuente: 'Hanken Grotesk', 'Segoe UI', system-ui, sans-serif;
+  --mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+  --ancho: 1180px;
+  --radio: 2px;
+  --sombra-panel: 0 24px 60px rgba(0, 0, 0, 0.45);
+
+  font: 400 16px/1.6 var(--fuente);
   color-scheme: dark;
-  color: var(--text-body);
-  background:
-    radial-gradient(circle at top, rgba(36, 72, 107, 0.28), transparent 35%),
-    linear-gradient(180deg, #08111c, #05070d 34%, #03050a 100%);
+  color: var(--niebla);
+  background: var(--negro);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -36,19 +48,11 @@ body,
 
 body {
   margin: 0;
-  background: inherit;
+  background: var(--negro);
 }
 
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent 92%);
+body.sin-scroll {
+  overflow: hidden;
 }
 
 a,
@@ -57,30 +61,81 @@ input,
 textarea,
 select {
   font: inherit;
+  color: inherit;
 }
 
 button {
   border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+h1,
+h2,
+h3,
+p,
+dl,
+dd,
+ol,
+ul,
+fieldset {
+  margin: 0;
+}
+
+ol,
+ul {
+  padding: 0;
+  list-style: none;
 }
 
 h1,
 h2,
 h3,
 strong {
-  font-family: var(--heading);
+  color: var(--hueso);
 }
 
 h1,
 h2,
-h3,
-p {
-  margin: 0;
+h3 {
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
 }
 
-a {
-  color: inherit;
+img {
+  display: block;
+  max-width: 100%;
 }
 
-#root {
-  width: 100%;
+:focus-visible {
+  outline: 2px solid var(--laton);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--laton);
+  color: var(--negro);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -3,11 +3,18 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import RedirigirPorRol from './auth/RedirigirPorRol';
 import RutaAdmin from './auth/RutaAdmin';
 import RutaProtegida from './auth/RutaProtegida';
-import LayoutPrivado from './layouts/LayoutPrivado';
+import LayoutAdmin from './layouts/LayoutAdmin';
+import LayoutTienda from './layouts/LayoutTienda';
 import AdminPedidos from './pages/admin/AdminPedidos';
 import Mensajeria from './pages/admin/Mensajeria';
 import Proximamente from './pages/admin/Proximamente';
+import Resumen from './pages/admin/Resumen';
+import Confirmacion from './pages/cliente/Confirmacion';
+import DetallePedido from './pages/cliente/DetallePedido';
+import DetalleProducto from './pages/cliente/DetalleProducto';
+import InicioTienda from './pages/cliente/InicioTienda';
 import MisPedidos from './pages/cliente/MisPedidos';
+import Pago from './pages/cliente/Pago';
 import Perfil from './pages/cliente/Perfil';
 import Tienda from './pages/cliente/Tienda';
 import Inicio from './pages/Inicio';
@@ -27,33 +34,39 @@ export default function App() {
         }
       />
 
-      {/* Zona cliente: cualquier usuario autenticado */}
+      {/* Tienda: cualquier usuario autenticado (el admin también puede comprar) */}
       <Route
         element={
           <RutaProtegida>
-            <LayoutPrivado zona="cliente" />
+            <LayoutTienda />
           </RutaProtegida>
         }
       >
+        <Route path="/inicio" element={<InicioTienda />} />
         <Route path="/tienda" element={<Tienda />} />
+        <Route path="/tienda/:id" element={<DetalleProducto />} />
+        <Route path="/pago" element={<Pago />} />
+        <Route path="/pedido/:id/confirmado" element={<Confirmacion />} />
         <Route path="/mis-pedidos" element={<MisPedidos />} />
+        <Route path="/mis-pedidos/:id" element={<DetallePedido />} />
         <Route path="/perfil" element={<Perfil />} />
       </Route>
 
-      {/* Zona administración: solo rol ADMIN */}
+      {/* Backoffice: solo rol ADMIN */}
       <Route
         path="/admin"
         element={
           <RutaProtegida>
             <RutaAdmin>
-              <LayoutPrivado zona="admin" />
+              <LayoutAdmin />
             </RutaAdmin>
           </RutaProtegida>
         }
       >
-        <Route index element={<Navigate replace to="pedidos" />} />
+        <Route index element={<Resumen />} />
         <Route path="pedidos" element={<AdminPedidos />} />
-        <Route path="mensajeria" element={<Mensajeria />} />
+        <Route path="laboratorio" element={<Mensajeria />} />
+        <Route path="mensajeria" element={<Navigate replace to="/admin/laboratorio" />} />
         <Route
           path="auditoria"
           element={
@@ -70,9 +83,9 @@ export default function App() {
           element={
             <Proximamente
               titulo="Reportes"
-              descripcion="Indicadores de las últimas 24 horas (ventas, pedidos activos y entregados, tiempo promedio de entrega), calculados por ms-reportes desde Kafka."
+              descripcion="Indicadores de las últimas 24 horas (ventas, pedidos activos y entregados, tiempo promedio de entrega) y productos más vendidos, calculados por ms-reportes desde Kafka."
               servicio="wepay-ms-reportes (puerto 8087)"
-              endpoints={['GET /api/report/kpis?range=last24h']}
+              endpoints={['GET /api/report/kpis?range=last24h', 'GET /api/report/top-products?range=last7d']}
             />
           }
         />
