@@ -1,3 +1,5 @@
+import type { DireccionGuardada } from './direccion';
+
 export type EstadoPedido =
   | 'CREADO'
   | 'ACEPTADO'
@@ -49,6 +51,8 @@ export type Perfil = {
   nombre: string;
   email: string;
   rol: string;
+  /** Dirección guardada en ms-clientes; null si aún no la guarda. */
+  direccion?: DireccionGuardada | null;
 };
 
 /** Camino normal de un pedido, en orden. CANCELADO queda fuera porque corta el flujo. */

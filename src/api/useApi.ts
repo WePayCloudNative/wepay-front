@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useMsal } from '@azure/msal-react';
 
+import type { DireccionGuardada } from '../domain/direccion';
 import type { EstadoPedido, Pedido, Perfil, Producto } from '../domain/pedidos';
 import { llamarApi } from './cliente';
 
@@ -25,6 +26,12 @@ export function useApi() {
 
     return {
       obtenerPerfil: () => llamar<Perfil>('/api/perfil'),
+      guardarDireccion: (direccion: DireccionGuardada) =>
+        llamar<Perfil>('/api/perfil/direccion', {
+          method: 'PUT',
+          headers: JSON_HEADERS,
+          body: JSON.stringify(direccion),
+        }),
       obtenerProductos: () => llamar<Producto[]>('/api/productos'),
       obtenerPedidos: () => llamar<Pedido[]>('/api/pedidos'),
       crearPedido: (items: ItemCompra[]) =>

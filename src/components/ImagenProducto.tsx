@@ -22,7 +22,9 @@ export default function ImagenProducto({
     .join('');
 
   return (
-    <div className={`imagen-producto imagen-producto--${tamano}`}>
+    <div
+      className={`imagen-producto imagen-producto--${tamano} ${src && !fallo ? 'imagen-producto--foto' : ''}`}
+    >
       {src && !fallo ? (
         <img src={src} alt={nombre} loading="lazy" onError={() => setFallo(true)} />
       ) : (

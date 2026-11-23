@@ -50,6 +50,10 @@ export default function SesionProvider({ children }: { children: ReactNode }) {
         setPerfil(null);
         setIntento((n) => n + 1);
       },
+      actualizarPerfil: (nuevo) => {
+        setPerfil(nuevo);
+        setError('');
+      },
       cerrarSesion: async () => {
         const account = instance.getActiveAccount() ?? instance.getAllAccounts()[0];
         setPerfil(null);

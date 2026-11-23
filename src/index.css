@@ -11,6 +11,8 @@
   --tenue: #737983;
   --laton: #c9a46a;
   --laton-suave: rgba(201, 164, 106, 0.14);
+  /* Fondo de las fotos de producto (las fotos vienen con fondo blanco) */
+  --placa: #e9e7e2;
 
   --exito: #86c3a1;
   --exito-fondo: rgba(134, 195, 161, 0.1);

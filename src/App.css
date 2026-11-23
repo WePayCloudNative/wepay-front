@@ -770,6 +770,22 @@
   object-fit: cover;
 }
 
+/* Fotos de catálogo con fondo blanco: se muestran sobre una placa clara
+   y el blanco se funde con ella (multiply), sin recuadros blancos. */
+.imagen-producto--foto {
+  background: var(--placa);
+}
+
+.imagen-producto--foto img {
+  object-fit: contain;
+  padding: 10%;
+  mix-blend-mode: multiply;
+}
+
+.imagen-producto--mini.imagen-producto--foto img {
+  padding: 6%;
+}
+
 .imagen-producto__placa {
   display: grid;
   place-items: center;
@@ -1415,6 +1431,96 @@
 .campo select:focus {
   border-color: var(--niebla);
   outline: none;
+}
+
+/* ---------- Dirección y teléfono ---------- */
+
+.campo__error {
+  color: var(--peligro);
+  font-size: 0.8125rem;
+}
+
+.campo [aria-invalid='true'],
+.campo-telefono--error {
+  border-color: var(--peligro);
+}
+
+.campo select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.campo-telefono {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--grafito);
+}
+
+.campo-telefono:focus-within {
+  border-color: var(--niebla);
+}
+
+.campo-telefono__prefijo {
+  padding: 0 4px 0 14px;
+  color: var(--niebla);
+}
+
+.campo .campo-telefono input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding-left: 6px;
+  border: 0;
+  background: none;
+}
+
+.casilla {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.casilla input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--laton);
+}
+
+.alinear-inicio {
+  justify-self: start;
+}
+
+.tarjeta-direccion {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--laton);
+  background: var(--laton-suave);
+  color: var(--hueso);
+}
+
+.tarjeta-direccion > .icono {
+  color: var(--laton);
+}
+
+.tarjeta-direccion p {
+  line-height: 1.5;
+}
+
+.tarjeta-direccion__titulo {
+  font-weight: 500;
+}
+
+.pila-perfil {
+  display: grid;
+  gap: 24px;
 }
 
 .medios {

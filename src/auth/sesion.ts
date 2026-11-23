@@ -8,6 +8,8 @@ export type Sesion = {
   cargando: boolean;
   error: string;
   recargarPerfil: () => void;
+  /** Reemplaza el perfil con el que devolvió el BFF (por ejemplo, al guardar la dirección). */
+  actualizarPerfil: (perfil: Perfil) => void;
   cerrarSesion: () => Promise<void>;
 };
 
