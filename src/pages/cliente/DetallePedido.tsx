@@ -7,6 +7,7 @@ import { useSesion } from '../../auth/sesion';
 import Aviso from '../../components/Aviso';
 import BadgeEstado from '../../components/BadgeEstado';
 import EstadoCarga from '../../components/EstadoCarga';
+import HistorialPedido from '../../components/HistorialPedido';
 import Icono from '../../components/Icono';
 import ListaDetalle from '../../components/ListaDetalle';
 import ProgresoPedido from '../../components/ProgresoPedido';
@@ -120,6 +121,8 @@ export default function DetallePedido() {
         <p className="texto-suave">{estado.detalle}</p>
         <ProgresoPedido estado={pedido.estado} />
       </section>
+
+      <HistorialPedido pedidoId={pedido.id} estado={pedido.estado} />
 
       <div className="detalle-pedido__grilla">
         <section className="panel">

@@ -7,7 +7,8 @@ import LayoutAdmin from './layouts/LayoutAdmin';
 import LayoutTienda from './layouts/LayoutTienda';
 import AdminPedidos from './pages/admin/AdminPedidos';
 import Mensajeria from './pages/admin/Mensajeria';
-import Proximamente from './pages/admin/Proximamente';
+import Auditoria from './pages/admin/Auditoria';
+import Reportes from './pages/admin/Reportes';
 import Resumen from './pages/admin/Resumen';
 import Confirmacion from './pages/cliente/Confirmacion';
 import DetallePedido from './pages/cliente/DetallePedido';
@@ -67,28 +68,8 @@ export default function App() {
         <Route path="pedidos" element={<AdminPedidos />} />
         <Route path="laboratorio" element={<Mensajeria />} />
         <Route path="mensajeria" element={<Navigate replace to="/admin/laboratorio" />} />
-        <Route
-          path="auditoria"
-          element={
-            <Proximamente
-              titulo="Auditoría"
-              descripcion="Historial de todos los eventos de pedidos (quién, qué y cuándo), registrado por ms-auditoria desde el tópico orders.events de Kafka."
-              servicio="wepay-ms-auditoria (puerto 8086)"
-              endpoints={['GET /api/audit', 'GET /api/audit/entidad/{pedidoId}', 'GET /api/audit/usuario/{oid}']}
-            />
-          }
-        />
-        <Route
-          path="reportes"
-          element={
-            <Proximamente
-              titulo="Reportes"
-              descripcion="Indicadores de las últimas 24 horas (ventas, pedidos activos y entregados, tiempo promedio de entrega) y productos más vendidos, calculados por ms-reportes desde Kafka."
-              servicio="wepay-ms-reportes (puerto 8087)"
-              endpoints={['GET /api/report/kpis?range=last24h', 'GET /api/report/top-products?range=last7d']}
-            />
-          }
-        />
+        <Route path="auditoria" element={<Auditoria />} />
+        <Route path="reportes" element={<Reportes />} />
       </Route>
 
       {/* Rutas antiguas y desconocidas */}

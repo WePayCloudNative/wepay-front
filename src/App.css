@@ -2339,3 +2339,224 @@
     width: 120px;
   }
 }
+
+/* ---------- Reportes y auditoría ---------- */
+
+.indicadores--cinco {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.indicadores--cinco .indicador__valor {
+  font-size: 1.875rem;
+}
+
+.reportes__grilla {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 16px;
+}
+
+/* Una sola serie: todas las barras en latón, el valor siempre en texto. */
+.barra {
+  display: block;
+  min-width: 2px;
+  height: 8px;
+  background: var(--laton);
+  border-radius: 0 4px 4px 0;
+}
+
+.grafico-horas {
+  display: grid;
+  grid-template-columns: repeat(24, minmax(0, 1fr));
+  gap: 2px;
+  height: 220px;
+  margin-top: 12px;
+  /* Línea base continua bajo las barras */
+  background: linear-gradient(var(--linea), var(--linea)) left calc(100% - 22px) / 100% 1px no-repeat;
+}
+
+.grafico-horas__columna {
+  display: grid;
+  grid-template-rows: 22px 1fr 22px;
+  align-items: end;
+  min-width: 0;
+}
+
+.grafico-horas__columna:hover .grafico-horas__barra {
+  background: var(--hueso);
+}
+
+.grafico-horas__barra {
+  align-self: end;
+  width: 100%;
+  background: var(--laton);
+  border-radius: 4px 4px 0 0;
+}
+
+.grafico-horas__columna > .grafico-horas__barra {
+  grid-row: 2;
+}
+
+.grafico-horas__valor {
+  grid-row: 1;
+  color: var(--hueso);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.grafico-horas__hora {
+  grid-row: 3;
+  padding-top: 4px;
+  color: var(--tenue);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.barras-estado {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0 0;
+}
+
+.barras-estado__fila {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.barras-estado__fila dt {
+  color: var(--niebla);
+  font-size: 0.875rem;
+}
+
+.barras-estado__fila dd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.barras-estado__cifra {
+  color: var(--hueso);
+  font-variant-numeric: tabular-nums;
+}
+
+.ranking {
+  display: grid;
+  gap: 14px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ranking__fila {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.ranking__datos {
+  display: grid;
+  gap: 6px;
+}
+
+.ranking__nombre {
+  margin: 0;
+  color: var(--hueso);
+}
+
+.ranking__cifras {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.ranking__cifras p {
+  margin: 0;
+}
+
+.fila-payload td {
+  background: var(--negro);
+}
+
+.payload {
+  max-height: 320px;
+  margin: 8px 0 0;
+  overflow: auto;
+  color: var(--hueso);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.historial {
+  display: grid;
+  gap: 0;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.historial__paso {
+  position: relative;
+  padding: 0 0 18px 22px;
+  border-left: 1px solid var(--linea);
+}
+
+.historial__paso:last-child {
+  padding-bottom: 0;
+  border-left-color: transparent;
+}
+
+.historial__paso::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: -5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--laton);
+}
+
+.historial__paso p {
+  margin: 0;
+}
+
+.historial__titulo {
+  color: var(--hueso);
+}
+
+@media (max-width: 1024px) {
+  .indicadores--cinco {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .reportes__grilla {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .indicadores--cinco {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .grafico-horas {
+    height: 160px;
+  }
+
+  .grafico-horas__valor {
+    font-size: 0.6875rem;
+  }
+
+  .grafico-horas__hora--secundaria {
+    visibility: hidden;
+  }
+
+  .barras-estado__fila {
+    grid-template-columns: 100px minmax(0, 1fr);
+  }
+}

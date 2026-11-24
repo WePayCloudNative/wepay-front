@@ -370,6 +370,10 @@ function PanelPedido({
 
           <h3>Productos</h3>
           <ListaDetalle pedido={pedido} />
+
+          <p className="nota">
+            <Link to={`/admin/auditoria?pedido=${pedido.id}`}>Ver su historia en auditoría</Link>
+          </p>
         </div>
       </aside>
     </div>

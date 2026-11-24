@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
 import { useMsal } from '@azure/msal-react';
 
+import type { EventoAuditoria, EventoPedido } from '../domain/auditoria';
 import type { DireccionGuardada } from '../domain/direccion';
+import type { ResumenReportes } from '../domain/reportes';
 import type { EstadoPedido, Pedido, Perfil, Producto } from '../domain/pedidos';
 import { llamarApi } from './cliente';
 
@@ -9,6 +11,25 @@ const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
 /** Lo que se envía al comprar: solo producto y cantidad. El BFF pone nombre y precio desde el catálogo. */
 export type ItemCompra = { productoId: number; cantidad: number };
+
+/** Filtros de la bitácora; todos opcionales. desde/hasta van juntos, en UTC. */
+export type FiltrosAuditoria = {
+  pedidoId?: number;
+  tipoEvento?: string;
+  desde?: string;
+  hasta?: string;
+};
+
+function aConsulta(filtros: FiltrosAuditoria): string {
+  const parametros = new URLSearchParams();
+  for (const [clave, valor] of Object.entries(filtros)) {
+    if (valor !== undefined && valor !== '') {
+      parametros.set(clave, String(valor));
+    }
+  }
+  const texto = parametros.toString();
+  return texto ? `?${texto}` : '';
+}
 
 /** Endpoints del BFF, ligados a la cuenta activa (cada llamada agrega el JWT). */
 export function useApi() {
@@ -49,6 +70,13 @@ export function useApi() {
       /** El cliente cancela su propio pedido (el BFF valida dueño y estado). */
       cancelarPedido: (id: number) =>
         llamar<Pedido>(`/api/pedidos/${id}/cancelar`, { method: 'POST' }),
+      /** Qué pasó con un pedido y cuándo (el cliente solo ve los suyos). */
+      historialPedido: (id: number) => llamar<EventoPedido[]>(`/api/pedidos/${id}/historial`),
+      /** Solo admin: bitácora de ms-auditoria. */
+      obtenerAuditoria: (filtros: FiltrosAuditoria = {}) =>
+        llamar<EventoAuditoria[]>(`/api/auditoria${aConsulta(filtros)}`),
+      /** Solo admin: KPIs, más vendidos y ventas por hora de ms-reportes. */
+      obtenerReportes: () => llamar<ResumenReportes>('/api/reportes'),
     };
   }, [instance, cuentaId]);
 }
