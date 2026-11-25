@@ -1,13 +1,19 @@
-import { aFecha } from '../utils/formato';
+import { aIsoUtc } from './auditoria';
 
-/** KPIs de las últimas 24 horas (ms-reportes). Ventas y tiempo cuentan solo pedidos entregados. */
-export type Kpis = {
+/** Indicadores de un período (ms-reportes). "Confirmados" = pago aceptado en adelante. */
+export type Indicadores = {
   totalPedidos: number;
+  pedidosConfirmados: number;
   pedidosEntregados: number;
   pedidosActivos: number;
-  ventasTotales: number;
+  pedidosCancelados: number;
+  ventasConfirmadas: number;
+  ventasEntregadas: number;
+  montoCancelado: number;
+  ticketPromedio: number;
+  /** Porcentaje 0-100 */
+  tasaCancelacion: number;
   leadTimePromedioMinutos: number;
-  pedidosPorEstado: Record<string, number>;
 };
 
 export type TopProducto = {
@@ -17,51 +23,64 @@ export type TopProducto = {
   ingresosTotales: number;
 };
 
-/** hora viene en UTC sin zona, truncada a la hora: "2026-11-24T19:00". */
-export type VentasPorHora = {
-  hora: string;
-  cantidadPedidos: number;
-  totalVentas: number;
-};
-
-export type ResumenReportes = {
-  kpis: Kpis;
-  topProductos: TopProducto[];
-  ventasPorHora: VentasPorHora[];
-};
-
-export type BarraHora = {
-  inicio: Date;
+/** inicio en UTC sin zona ("2026-11-24T03:00"); el tramo es una hora o un día de Chile. */
+export type VentasPorTramo = {
+  inicio: string;
   pedidos: number;
   ventas: number;
 };
 
-/**
- * Arma las 24 barras de la última jornada (una por hora, en hora local).
- * ms-reportes solo envía las horas con ventas; las demás quedan en cero.
- */
-export function completarHoras(datos: VentasPorHora[], ahora: Date = new Date()): BarraHora[] {
-  const porHora = new Map<number, VentasPorHora>();
-  for (const d of datos) {
-    const inicio = aFecha(d.hora);
-    if (!Number.isNaN(inicio.getTime())) {
-      porHora.set(inicio.getTime(), d);
-    }
-  }
+export type ResumenReportes = {
+  desde: string;
+  hasta: string;
+  agrupacion: 'hora' | 'dia';
+  actual: Indicadores;
+  /** El período de igual largo justo antes, para comparar. */
+  anterior: Indicadores;
+  pedidosPorEstado: Record<string, number>;
+  topProductos: TopProducto[];
+  ventasPorTramo: VentasPorTramo[];
+};
 
-  const ultima = new Date(ahora);
-  ultima.setMinutes(0, 0, 0);
-  const barras: BarraHora[] = [];
-  for (let i = 23; i >= 0; i--) {
-    const inicio = new Date(ultima.getTime() - i * 3_600_000);
-    const dato = porHora.get(inicio.getTime());
-    barras.push({
-      inicio,
-      pedidos: dato?.cantidadPedidos ?? 0,
-      ventas: dato?.totalVentas ?? 0,
-    });
+export type PeriodoReporte = 'hoy' | '7d' | '30d' | 'mes';
+
+export const PERIODOS_REPORTE: { id: PeriodoReporte; texto: string; comparacion: string }[] = [
+  { id: 'hoy', texto: 'Hoy', comparacion: 'que ayer a esta hora' },
+  { id: '7d', texto: '7 días', comparacion: 'que los 7 días anteriores' },
+  { id: '30d', texto: '30 días', comparacion: 'que los 30 días anteriores' },
+  { id: 'mes', texto: 'Este mes', comparacion: 'que el período anterior' },
+];
+
+/**
+ * Rango desde/hasta (UTC, sin zona) para cada período, contado en la hora local.
+ * "Hoy" parte a medianoche y "Este mes" el día 1 a medianoche.
+ */
+export function rangoReporte(periodo: PeriodoReporte, ahora: Date = new Date()): { desde: string; hasta: string } {
+  const desde = new Date(ahora);
+  if (periodo === 'hoy') {
+    desde.setHours(0, 0, 0, 0);
+  } else if (periodo === 'mes') {
+    desde.setDate(1);
+    desde.setHours(0, 0, 0, 0);
+  } else {
+    desde.setDate(desde.getDate() - (periodo === '7d' ? 7 : 30));
   }
-  return barras;
+  // El primer minuto del día o del mes deja un rango vacío: se asegura al menos 1 minuto
+  const hasta = ahora.getTime() - desde.getTime() < 60_000 ? new Date(desde.getTime() + 60_000) : ahora;
+  return { desde: aIsoUtc(desde), hasta: aIsoUtc(hasta) };
+}
+
+/** Variación porcentual redondeada; null si antes no había nada con qué comparar. */
+export function variacion(actual: number, anterior: number): number | null {
+  if (!Number.isFinite(anterior) || anterior <= 0) {
+    return null;
+  }
+  return Math.round(((actual - anterior) / anterior) * 100);
+}
+
+/** Cada cuántos tramos poner una etiqueta para que no se monten (máximo ~8). */
+export function pasoEtiquetas(cantidad: number, maximo = 8): number {
+  return Math.max(1, Math.ceil(cantidad / maximo));
 }
 
 /** 0 → "—", 42 → "42 min", 135 → "2 h 15 min" */

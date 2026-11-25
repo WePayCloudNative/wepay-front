@@ -75,8 +75,9 @@ export function useApi() {
       /** Solo admin: bitácora de ms-auditoria. */
       obtenerAuditoria: (filtros: FiltrosAuditoria = {}) =>
         llamar<EventoAuditoria[]>(`/api/auditoria${aConsulta(filtros)}`),
-      /** Solo admin: KPIs, más vendidos y ventas por hora de ms-reportes. */
-      obtenerReportes: () => llamar<ResumenReportes>('/api/reportes'),
+      /** Solo admin: indicadores de un período (desde/hasta en UTC) de ms-reportes. */
+      obtenerReportes: (desde: string, hasta: string) =>
+        llamar<ResumenReportes>(`/api/reportes${aConsulta({ desde, hasta })}`),
     };
   }, [instance, cuentaId]);
 }

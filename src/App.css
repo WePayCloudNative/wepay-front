@@ -2342,6 +2342,38 @@
 
 /* ---------- Reportes y auditoría ---------- */
 
+.cambio--sube {
+  color: var(--exito);
+}
+
+.cambio--baja {
+  color: var(--peligro);
+}
+
+.atencion {
+  border-left: 2px solid var(--laton);
+}
+
+.atencion__lista {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.atencion__lista li {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.cargando-suave {
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
 .indicadores--cinco {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
@@ -2367,7 +2399,6 @@
 
 .grafico-horas {
   display: grid;
-  grid-template-columns: repeat(24, minmax(0, 1fr));
   gap: 2px;
   height: 220px;
   margin-top: 12px;
@@ -2546,6 +2577,11 @@
 
   .grafico-horas {
     height: 160px;
+  }
+
+  .panel__cabecera {
+    flex-wrap: wrap;
+    gap: 4px 12px;
   }
 
   .grafico-horas__valor {

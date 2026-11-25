@@ -4,7 +4,13 @@ import { Link } from 'react-router-dom';
 import Aviso from '../../components/Aviso';
 import BadgeEstado from '../../components/BadgeEstado';
 import EstadoCarga from '../../components/EstadoCarga';
-import type { EstadoPedido, Pedido } from '../../domain/pedidos';
+import {
+  ETIQUETA_ESTADO,
+  pedidosAtascados,
+  tiempoEsperando,
+  type EstadoPedido,
+  type Pedido,
+} from '../../domain/pedidos';
 import { usePedidos } from '../../pedidos/usePedidos';
 import { acortar, aFecha, formatearFecha, formatearPesos } from '../../utils/formato';
 
@@ -30,6 +36,7 @@ export default function Resumen() {
     return <EstadoCarga texto="Cargando resumen..." />;
   }
 
+  const atascados = pedidosAtascados(pedidos, (p) => aFecha(p.fechaRegistro));
   const porAceptar = pedidos.filter((p) => p.estado === 'CREADO');
   const enCurso = pedidos.filter((p) => EN_CURSO.includes(p.estado));
   const hoy = pedidos.filter(esDeHoy);
@@ -48,6 +55,35 @@ export default function Resumen() {
           Revisar pagos pendientes
         </Link>
       </header>
+
+      {atascados.length > 0 ? (
+        <section className="panel atencion" aria-labelledby="titulo-atencion">
+          <div className="panel__cabecera">
+            <h2 id="titulo-atencion">
+              {atascados.length === 1
+                ? '1 pedido necesita atención'
+                : `${atascados.length} pedidos necesitan atención`}
+            </h2>
+            <p className="texto-suave">
+              Desde la compra: confirmar pago en 30 min, preparar en 2 h, despachar en 24 h
+            </p>
+          </div>
+          <ul className="atencion__lista">
+            {atascados.slice(0, 5).map(({ pedido, minutos }) => (
+              <li key={pedido.id}>
+                <Link to={`/admin/pedidos?pedido=${pedido.id}`}>#{pedido.id}</Link>
+                <span>
+                  Sigue en {ETIQUETA_ESTADO[pedido.estado]}, comprado hace {tiempoEsperando(minutos)}
+                </span>
+                <span className="texto-suave">{formatearPesos(pedido.total)}</span>
+              </li>
+            ))}
+          </ul>
+          {atascados.length > 5 ? (
+            <p className="nota">Y {atascados.length - 5} más. Revisa la lista de pedidos.</p>
+          ) : null}
+        </section>
+      ) : null}
 
       <div className="indicadores">
         <div className="indicador indicador--alerta">

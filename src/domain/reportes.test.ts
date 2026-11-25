@@ -1,33 +1,57 @@
 import { describe, expect, it } from 'vitest';
 
-import { completarHoras, formatearMinutos, proporcion } from './reportes';
+import { formatearMinutos, pasoEtiquetas, proporcion, rangoReporte, variacion } from './reportes';
 
-describe('completarHoras', () => {
-  const ahora = new Date('2026-11-24T19:45:00Z');
+describe('rangoReporte', () => {
+  const ahora = new Date('2026-11-24T19:30:00Z');
 
-  it('siempre devuelve 24 barras, la última es la hora actual', () => {
-    const barras = completarHoras([], ahora);
-    expect(barras).toHaveLength(24);
-    expect(barras[23].inicio.toISOString()).toBe('2026-11-24T19:00:00.000Z');
+  it('"hoy" parte a medianoche local y termina ahora', () => {
+    const { desde, hasta } = rangoReporte('hoy', ahora);
+    const inicio = new Date(`${desde}Z`);
+    expect(inicio.getHours()).toBe(0);
+    expect(inicio.getDate()).toBe(ahora.getDate());
+    expect(hasta).toBe('2026-11-24T19:30:00');
   });
 
-  it('pone cada venta en su hora (llegan en UTC sin zona) y el resto en cero', () => {
-    const barras = completarHoras(
-      [{ hora: '2026-11-24T17:00', cantidadPedidos: 2, totalVentas: 179980 }],
-      ahora,
-    );
-    const conVentas = barras.filter((b) => b.ventas > 0);
-    expect(conVentas).toHaveLength(1);
-    expect(conVentas[0].inicio.toISOString()).toBe('2026-11-24T17:00:00.000Z');
-    expect(conVentas[0].pedidos).toBe(2);
+  it('"7 días" retrocede una semana exacta', () => {
+    expect(rangoReporte('7d', ahora).desde).toBe('2026-11-17T19:30:00');
   });
 
-  it('ignora horas fuera de las últimas 24', () => {
-    const barras = completarHoras(
-      [{ hora: '2026-11-20T10:00', cantidadPedidos: 1, totalVentas: 1000 }],
-      ahora,
-    );
-    expect(barras.every((b) => b.ventas === 0)).toBe(true);
+  it('"este mes" parte el día 1 a medianoche local', () => {
+    const inicio = new Date(`${rangoReporte('mes', ahora).desde}Z`);
+    expect(inicio.getDate()).toBe(1);
+    expect(inicio.getHours()).toBe(0);
+  });
+
+  it('justo a medianoche el rango igual dura al menos un minuto', () => {
+    const medianoche = new Date(2026, 10, 24, 0, 0, 0);
+    const { desde, hasta } = rangoReporte('hoy', medianoche);
+    expect(new Date(`${hasta}Z`).getTime() - new Date(`${desde}Z`).getTime()).toBe(60_000);
+  });
+});
+
+describe('variacion', () => {
+  it('calcula el cambio porcentual', () => {
+    expect(variacion(118, 100)).toBe(18);
+    expect(variacion(50, 100)).toBe(-50);
+  });
+
+  it('sin período anterior no hay comparación', () => {
+    expect(variacion(10, 0)).toBeNull();
+  });
+});
+
+describe('pasoEtiquetas', () => {
+  it('24 horas → una etiqueta cada 3', () => {
+    expect(pasoEtiquetas(24)).toBe(3);
+  });
+
+  it('7 días → todas', () => {
+    expect(pasoEtiquetas(7)).toBe(1);
+  });
+
+  it('30 días → una cada 4', () => {
+    expect(pasoEtiquetas(30)).toBe(4);
   });
 });
 

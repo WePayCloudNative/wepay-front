@@ -153,3 +153,42 @@ export function unidadesDe(pedido: Pedido): number {
 export function tieneRolAdmin(perfil: Perfil | null): boolean {
   return perfil?.rol?.toUpperCase() === 'ADMIN';
 }
+
+/**
+ * Minutos que un pedido puede llevar en cada estado antes de pedir atención.
+ * Se mide desde la compra (fechaRegistro), que es la fecha que entrega ms-pedidos.
+ */
+export const LIMITE_ESPERA_MINUTOS: Partial<Record<EstadoPedido, number>> = {
+  CREADO: 30,
+  ACEPTADO: 2 * 60,
+  EN_PREPARACION: 24 * 60,
+};
+
+export type PedidoAtascado = { pedido: Pedido; minutos: number };
+
+/** Pedidos que superaron el límite de su estado, los más antiguos primero. */
+export function pedidosAtascados(
+  pedidos: Pedido[],
+  aFechaPedido: (p: Pedido) => Date,
+  ahora: Date = new Date(),
+): PedidoAtascado[] {
+  return pedidos
+    .map((pedido) => ({
+      pedido,
+      minutos: Math.floor((ahora.getTime() - aFechaPedido(pedido).getTime()) / 60_000),
+    }))
+    .filter(({ pedido, minutos }) => {
+      const limite = LIMITE_ESPERA_MINUTOS[pedido.estado];
+      return limite !== undefined && minutos > limite;
+    })
+    .sort((a, b) => b.minutos - a.minutos);
+}
+
+/** 45 → "45 min", 150 → "2 h", 3000 → "2 días" */
+export function tiempoEsperando(minutos: number): string {
+  if (minutos < 60) return `${minutos} min`;
+  const horas = Math.floor(minutos / 60);
+  if (horas < 24) return `${horas} h`;
+  const dias = Math.floor(horas / 24);
+  return dias === 1 ? '1 día' : `${dias} días`;
+}
