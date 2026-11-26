@@ -12,11 +12,12 @@ import {
   payloadLegible,
   PERIODOS,
   rangoDe,
+  ROL_ACTOR,
   TIPOS_EVENTO,
   type EventoAuditoria,
   type Periodo,
 } from '../../domain/auditoria';
-import { ETIQUETA_ESTADO } from '../../domain/pedidos';
+import { ETIQUETA_ESTADO, type EstadoPedido } from '../../domain/pedidos';
 import { acortar, formatearFecha } from '../../utils/formato';
 
 const POR_PAGINA = 15;
@@ -184,8 +185,8 @@ export default function Auditoria() {
                   <tr>
                     <th>Fecha</th>
                     <th>Pedido</th>
-                    <th>Evento</th>
-                    <th>Deja el pedido en</th>
+                    <th>Cambio</th>
+                    <th>Hecho por</th>
                     <th>Cliente</th>
                     <th>
                       <span className="sr-only">Datos</span>
@@ -203,10 +204,39 @@ export default function Auditoria() {
                           <td>
                             <Link to={`/admin/pedidos?pedido=${e.entidadId}`}>#{e.entidadId}</Link>
                           </td>
-                          <td className="mono">{e.tipoEvento}</td>
-                          <td>{estado ? <BadgeEstado estado={estado} /> : '—'}</td>
-                          <td className="mono" title={e.usuarioOid}>
-                            {acortar(e.usuarioOid ?? '')}
+                          <td>
+                            <span className="cambio-estado">
+                              {e.estadoAnterior ? (
+                                <>
+                                  <span className="texto-suave">
+                                    {ETIQUETA_ESTADO[e.estadoAnterior as EstadoPedido] ?? e.estadoAnterior}
+                                  </span>
+                                  <span aria-label="pasa a">→</span>
+                                </>
+                              ) : null}
+                              {estado ? <BadgeEstado estado={estado} /> : e.tipoEvento}
+                            </span>
+                          </td>
+                          <td>
+                            {e.actorRol === 'SISTEMA' ? (
+                              <span className="texto-suave">Sistema</span>
+                            ) : e.actorRol ? (
+                              <span className="persona">
+                                <span title={e.actorOid ?? undefined}>
+                                  {e.actorNombre ?? acortar(e.actorOid ?? '')}
+                                </span>
+                                <span className={`rol rol--${e.actorRol.toLowerCase()}`}>
+                                  {ROL_ACTOR[e.actorRol] ?? e.actorRol}
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="texto-suave" title="Evento anterior a registrar quién hace cada cambio">
+                                Sin registro
+                              </span>
+                            )}
+                          </td>
+                          <td title={e.usuarioOid}>
+                            {e.clienteNombre ?? <span className="mono">{acortar(e.usuarioOid ?? '')}</span>}
                           </td>
                           <td className="num">
                             <button
@@ -222,7 +252,7 @@ export default function Auditoria() {
                           <tr className="fila-payload">
                             <td colSpan={6}>
                               <p className="nota">
-                                Publicado por <span className="mono">{e.origen}</span> en el tópico{' '}
+                                Evento <span className="mono">{e.tipoEvento}</span>. Publicado por <span className="mono">{e.origen}</span> en el tópico{' '}
                                 <span className="mono">orders.events</span>
                               </p>
                               <pre className="payload">{payloadLegible(e.payload)}</pre>

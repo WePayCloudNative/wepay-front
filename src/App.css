@@ -2369,6 +2369,32 @@
   gap: 12px;
 }
 
+.cambio-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.persona {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.rol {
+  padding: 1px 6px;
+  border: 1px solid var(--linea);
+  color: var(--niebla);
+  font-size: 0.75rem;
+}
+
+.rol--admin {
+  border-color: var(--laton);
+  color: var(--laton);
+}
+
 .cargando-suave {
   opacity: 0.6;
   transition: opacity 0.2s;

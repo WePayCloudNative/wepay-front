@@ -10,13 +10,41 @@ export type EventoAuditoria = {
   origen: string;
   /** El JSON completo que viajó por Kafka (orders.events). */
   payload: string;
+  /** Quién hizo el cambio. null en eventos anteriores a este registro. */
+  actorOid: string | null;
+  actorRol: 'ADMIN' | 'CLIENTE' | 'SISTEMA' | null;
+  estadoAnterior: string | null;
+  estadoNuevo: string | null;
+  /** Nombres que agrega el BFF desde ms-clientes (null si no se pudieron obtener). */
+  clienteNombre: string | null;
+  actorNombre: string | null;
 };
 
 /** Lo que ve el cliente del historial de su pedido. */
 export type EventoPedido = {
   tipoEvento: string;
   fecha: string;
+  /** null en eventos anteriores a registrar quién hizo el cambio */
+  hechoPor: 'TIENDA' | 'CLIENTE' | null;
 };
+
+export const ROL_ACTOR: Record<string, string> = {
+  ADMIN: 'Admin',
+  CLIENTE: 'Cliente',
+  SISTEMA: 'Sistema',
+};
+
+/**
+ * Texto para el historial del cliente. Solo cambia la cancelación, que es donde
+ * importa saber si la pidió el cliente o la hizo la tienda.
+ */
+export function tituloParaCliente(evento: EventoPedido, tituloEstado: string): string {
+  if (evento.tipoEvento === 'OrderCancelled') {
+    if (evento.hechoPor === 'CLIENTE') return 'Cancelaste el pedido';
+    if (evento.hechoPor === 'TIENDA') return 'La tienda canceló el pedido';
+  }
+  return tituloEstado;
+}
 
 /** Nombres que publica ms-pedidos en Kafka, en el orden del flujo. */
 export const TIPOS_EVENTO = [

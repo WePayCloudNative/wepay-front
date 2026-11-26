@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { useApi } from '../api/useApi';
-import { estadoDeEvento, type EventoPedido } from '../domain/auditoria';
+import { estadoDeEvento, tituloParaCliente, type EventoPedido } from '../domain/auditoria';
 import { ESTADO_PARA_CLIENTE } from '../domain/pedidos';
 import { formatearFecha } from '../utils/formato';
 
@@ -38,7 +38,9 @@ export default function HistorialPedido({ pedidoId, estado }: { pedidoId: number
           const estadoEvento = estadoDeEvento(e.tipoEvento)!;
           return (
             <li key={`${e.tipoEvento}-${e.fecha}-${i}`} className="historial__paso">
-              <p className="historial__titulo">{ESTADO_PARA_CLIENTE[estadoEvento].titulo}</p>
+              <p className="historial__titulo">
+                {tituloParaCliente(e, ESTADO_PARA_CLIENTE[estadoEvento].titulo)}
+              </p>
               <p className="texto-suave">{formatearFecha(e.fecha)}</p>
             </li>
           );

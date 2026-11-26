@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { aIsoUtc, estadoDeEvento, payloadLegible, rangoDe } from './auditoria';
+import { aIsoUtc, estadoDeEvento, payloadLegible, rangoDe, tituloParaCliente } from './auditoria';
 
 describe('estadoDeEvento', () => {
   it('traduce el nombre de Kafka al estado del pedido', () => {
@@ -43,5 +43,27 @@ describe('payloadLegible', () => {
 
   it('si no es JSON lo deja igual', () => {
     expect(payloadLegible('no es json')).toBe('no es json');
+  });
+});
+
+describe('tituloParaCliente', () => {
+  const cancelado = (hechoPor: 'TIENDA' | 'CLIENTE' | null) => ({
+    tipoEvento: 'OrderCancelled',
+    fecha: '2026-11-24T20:00:00',
+    hechoPor,
+  });
+
+  it('distingue si canceló el cliente o la tienda', () => {
+    expect(tituloParaCliente(cancelado('CLIENTE'), 'Pedido cancelado')).toBe('Cancelaste el pedido');
+    expect(tituloParaCliente(cancelado('TIENDA'), 'Pedido cancelado')).toBe('La tienda canceló el pedido');
+  });
+
+  it('sin registro de quién fue, usa el título normal', () => {
+    expect(tituloParaCliente(cancelado(null), 'Pedido cancelado')).toBe('Pedido cancelado');
+  });
+
+  it('los demás eventos no cambian', () => {
+    const despachado = { tipoEvento: 'OrderDispatched', fecha: '2026-11-24T20:00:00', hechoPor: 'TIENDA' as const };
+    expect(tituloParaCliente(despachado, 'En camino')).toBe('En camino');
   });
 });
