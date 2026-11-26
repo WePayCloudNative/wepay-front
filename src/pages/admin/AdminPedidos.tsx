@@ -14,6 +14,7 @@ import { colasDestino, EXCHANGE_PEDIDOS, routingKey } from '../../domain/mensaje
 import {
   ACCION_HACIA,
   ETIQUETA_ESTADO,
+  estadoAuditoria,
   estadosSiguientes,
   TODOS_LOS_ESTADOS,
   unidadesDe,
@@ -371,11 +372,23 @@ function PanelPedido({
           <h3>Productos</h3>
           <ListaDetalle pedido={pedido} />
 
-          <p className="nota">
-            <Link to={`/admin/auditoria?pedido=${pedido.id}`}>Ver su historia en auditoría</Link>
-          </p>
+          <ConfirmacionAuditoria pedido={pedido} />
         </div>
       </aside>
+    </div>
+  );
+}
+
+/** Confirmación que llega de ms-auditoria por audit.timeline (ms-pedidos la guarda en el pedido). */
+function ConfirmacionAuditoria({ pedido }: { pedido: Pedido }) {
+  const auditoria = estadoAuditoria(pedido);
+  return (
+    <div className={`auditoria-pedido auditoria-pedido--${auditoria.tipo}`}>
+      <p>
+        <span aria-hidden="true">{auditoria.tipo === 'al-dia' ? '✓' : '…'}</span> {auditoria.texto}
+        {pedido.auditadoEn ? <span className="texto-suave"> ({formatearFecha(pedido.auditadoEn)})</span> : null}
+      </p>
+      <Link to={`/admin/auditoria?pedido=${pedido.id}`}>Ver su historia en auditoría</Link>
     </div>
   );
 }

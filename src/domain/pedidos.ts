@@ -24,6 +24,9 @@ export type Pedido = {
   estado: EstadoPedido;
   /** Puede faltar si el BFF o ms-pedidos desplegados aún no la envían. */
   detalles?: DetallePedido[] | null;
+  /** Cuándo confirmó ms-auditoria (vía audit.timeline) el último evento, y en qué estado. */
+  auditadoEn?: string | null;
+  estadoAuditado?: string | null;
 };
 
 export type Producto = {
@@ -157,12 +160,30 @@ export function tieneRolAdmin(perfil: Perfil | null): boolean {
 /**
  * Minutos que un pedido puede llevar en cada estado antes de pedir atención.
  * Se mide desde la compra (fechaRegistro), que es la fecha que entrega ms-pedidos.
+ *
+ * CREADO (pago sin confirmar) está en 1 minuto a propósito, para poder mostrar la alerta en la
+ * demostración. En una tienda real serían unos 30: se cambia con MINUTOS_ALERTA_PAGO en config.js.
  */
 export const LIMITE_ESPERA_MINUTOS: Partial<Record<EstadoPedido, number>> = {
-  CREADO: 30,
+  CREADO: 1,
   ACEPTADO: 2 * 60,
   EN_PREPARACION: 24 * 60,
 };
+
+type Limites = Partial<Record<EstadoPedido, number>>;
+
+/**
+ * Límites efectivos. El de pago se puede cambiar en public/config.js con MINUTOS_ALERTA_PAGO
+ * (por ejemplo 30 en producción), sin tocar el código; si no está o no es válido, se usa 1 minuto.
+ */
+export function limitesEspera(
+  config: { MINUTOS_ALERTA_PAGO?: number } | undefined = typeof window !== 'undefined'
+    ? window.RUNTIME_CONFIG
+    : undefined,
+): Limites {
+  const pago = Number(config?.MINUTOS_ALERTA_PAGO);
+  return Number.isFinite(pago) && pago > 0 ? { ...LIMITE_ESPERA_MINUTOS, CREADO: pago } : LIMITE_ESPERA_MINUTOS;
+}
 
 export type PedidoAtascado = { pedido: Pedido; minutos: number };
 
@@ -171,6 +192,7 @@ export function pedidosAtascados(
   pedidos: Pedido[],
   aFechaPedido: (p: Pedido) => Date,
   ahora: Date = new Date(),
+  limites: Limites = LIMITE_ESPERA_MINUTOS,
 ): PedidoAtascado[] {
   return pedidos
     .map((pedido) => ({
@@ -178,7 +200,7 @@ export function pedidosAtascados(
       minutos: Math.floor((ahora.getTime() - aFechaPedido(pedido).getTime()) / 60_000),
     }))
     .filter(({ pedido, minutos }) => {
-      const limite = LIMITE_ESPERA_MINUTOS[pedido.estado];
+      const limite = limites[pedido.estado];
       return limite !== undefined && minutos > limite;
     })
     .sort((a, b) => b.minutos - a.minutos);
@@ -191,4 +213,27 @@ export function tiempoEsperando(minutos: number): string {
   if (horas < 24) return `${horas} h`;
   const dias = Math.floor(horas / 24);
   return dias === 1 ? '1 día' : `${dias} días`;
+}
+
+export type EstadoAuditoria = {
+  tipo: 'al-dia' | 'pendiente' | 'sin-registro';
+  texto: string;
+};
+
+/**
+ * Compara el estado del pedido con el último que auditoría confirmó.
+ * "Pendiente" es normal por unos segundos después de un cambio; si dura, auditoría está atrasada.
+ */
+export function estadoAuditoria(pedido: Pedido): EstadoAuditoria {
+  if (!pedido.auditadoEn) {
+    return { tipo: 'sin-registro', texto: 'Auditoría aún no confirma este pedido' };
+  }
+  if (pedido.estadoAuditado === pedido.estado) {
+    return { tipo: 'al-dia', texto: 'Registrado en auditoría' };
+  }
+  const auditado = ETIQUETA_ESTADO[pedido.estadoAuditado as EstadoPedido] ?? pedido.estadoAuditado;
+  return {
+    tipo: 'pendiente',
+    texto: `Auditoría confirmó hasta "${auditado}"; falta registrar el cambio a "${ETIQUETA_ESTADO[pedido.estado]}"`,
+  };
 }

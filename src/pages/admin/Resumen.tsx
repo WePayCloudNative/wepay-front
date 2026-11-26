@@ -6,6 +6,7 @@ import BadgeEstado from '../../components/BadgeEstado';
 import EstadoCarga from '../../components/EstadoCarga';
 import {
   ETIQUETA_ESTADO,
+  limitesEspera,
   pedidosAtascados,
   tiempoEsperando,
   type EstadoPedido,
@@ -36,7 +37,8 @@ export default function Resumen() {
     return <EstadoCarga texto="Cargando resumen..." />;
   }
 
-  const atascados = pedidosAtascados(pedidos, (p) => aFecha(p.fechaRegistro));
+  const limites = limitesEspera();
+  const atascados = pedidosAtascados(pedidos, (p) => aFecha(p.fechaRegistro), new Date(), limites);
   const porAceptar = pedidos.filter((p) => p.estado === 'CREADO');
   const enCurso = pedidos.filter((p) => EN_CURSO.includes(p.estado));
   const hoy = pedidos.filter(esDeHoy);
@@ -65,7 +67,8 @@ export default function Resumen() {
                 : `${atascados.length} pedidos necesitan atención`}
             </h2>
             <p className="texto-suave">
-              Desde la compra: confirmar pago en 30 min, preparar en 2 h, despachar en 24 h
+              Desde la compra: confirmar pago en {tiempoEsperando(limites.CREADO ?? 1)}, preparar en 2 h,
+              despachar en 24 h
             </p>
           </div>
           <ul className="atencion__lista">
