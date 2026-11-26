@@ -2395,6 +2395,27 @@
   color: var(--laton);
 }
 
+.auditoria-pedido {
+  display: grid;
+  gap: 6px;
+  margin-top: 20px;
+  padding: 12px 14px;
+  border-left: 2px solid var(--linea);
+  background: var(--grafito);
+}
+
+.auditoria-pedido p {
+  margin: 0;
+}
+
+.auditoria-pedido--al-dia {
+  border-left-color: var(--exito);
+}
+
+.auditoria-pedido--pendiente {
+  border-left-color: var(--laton);
+}
+
 .cargando-suave {
   opacity: 0.6;
   transition: opacity 0.2s;
