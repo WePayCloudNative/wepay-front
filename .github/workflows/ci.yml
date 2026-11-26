@@ -1,0 +1,32 @@
+# Corre lint, tests y build en cada push y en cada Pull Request.
+# Si algo falla, el check queda en rojo y el PR no se debería mergear.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  front:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build

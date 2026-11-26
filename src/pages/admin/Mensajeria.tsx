@@ -67,13 +67,13 @@ export default function Mensajeria() {
   const { eventos, limpiar } = useRegistroEventos();
 
   useEffect(() => {
-    document.title = 'Wepay | Mensajería';
+    document.title = 'WePay | Laboratorio RabbitMQ';
   }, []);
 
   return (
     <div className="pila">
       <section className="tarjeta">
-        <p className="eyebrow">RabbitMQ</p>
+        <p className="eyebrow">Laboratorio RabbitMQ</p>
         <h1>Cómo viaja un cambio de estado</h1>
         <div className="flujo" aria-label="Recorrido de un evento">
           <div className="flujo__caja">

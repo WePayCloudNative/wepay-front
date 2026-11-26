@@ -4,7 +4,17 @@ import { InteractionStatus } from '@azure/msal-browser';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { tokenRequest } from '../auth/authConfig';
+import Beneficios from '../components/Beneficios';
+import Marca from '../components/Marca';
+import Portada from '../components/Portada';
 
+const PASOS = [
+  { titulo: 'Elige', texto: 'Arma tu bolsa con periféricos, monitores y sillas.' },
+  { titulo: 'Paga', texto: 'Confirma la compra con tu cuenta Microsoft, sin crear otra contraseña.' },
+  { titulo: 'Sigue tu pedido', texto: 'Ve cada etapa, desde el pago hasta la entrega, y recibe avisos por correo y SMS.' },
+];
+
+/** Página pública: presenta la tienda e inicia sesión con Microsoft Entra ID. */
 export default function Inicio() {
   const { instance, accounts, inProgress } = useMsal();
   const navigate = useNavigate();
@@ -16,7 +26,7 @@ export default function Inicio() {
   const ocupado = inProgress !== InteractionStatus.None;
 
   useEffect(() => {
-    document.title = 'Wepay | Inicio';
+    document.title = 'WePay | Tienda gamer';
   }, []);
 
   async function entrar() {
@@ -29,36 +39,54 @@ export default function Inicio() {
     navigate(destino);
   }
 
+  const textoBoton = account ? 'Entrar a la tienda' : 'Ingresar con Microsoft';
+
   return (
-    <div className="pagina">
-      <header className="topbar">
-        <div className="marca">
-          <span className="marca__logo">W</span>
-          <div>
-            <p className="eyebrow">Tienda gamer</p>
-            <strong>Wepay</strong>
+    <div className="sitio">
+      <p className="franja">Despacho gratis a todo Chile en todas tus compras</p>
+      <header className="cabecera">
+        <div className="contenedor cabecera__fila">
+          <Marca destino="/" />
+          <div className="cabecera__iconos">
+            <button className="boton boton--secundario boton--chico" disabled={ocupado} onClick={() => void entrar()}>
+              {account ? 'Entrar' : 'Ingresar'}
+            </button>
           </div>
-        </div>
-        <div className="topbar__acciones">
-          <button className="boton boton--fantasma" disabled={ocupado} onClick={() => void entrar()}>
-            {account ? 'Entrar' : 'Iniciar sesión'}
-          </button>
         </div>
       </header>
 
-      <section className="hero tarjeta">
-        <p className="eyebrow">Periféricos, monitores y setups de alto nivel</p>
-        <h1>Arma tu setup gamer y sigue tu pedido en tiempo real.</h1>
-        <p className="texto-suave">
-          Inicia sesión con tu cuenta de Microsoft para comprar y revisar el avance de tus pedidos.
-          Si tu cuenta es de administración, entrarás directo al panel de gestión.
+      <main id="contenido">
+        <Portada
+          acciones={
+            <button className="boton boton--claro" disabled={ocupado} onClick={() => void entrar()}>
+              {textoBoton}
+            </button>
+          }
+        />
+
+        <section className="seccion">
+          <div className="contenedor">
+            <h2 className="seccion__titulo">Cómo funciona</h2>
+            <ol className="pasos">
+              {PASOS.map((paso, i) => (
+                <li key={paso.titulo} className="paso">
+                  <span className="paso__numero">{i + 1}</span>
+                  <h3>{paso.titulo}</h3>
+                  <p>{paso.texto}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <Beneficios />
+      </main>
+
+      <footer className="pie pie--simple">
+        <p className="contenedor pie__legal">
+          WePay es un proyecto académico de Duoc UC. Los pagos son simulados.
         </p>
-        <div className="acciones">
-          <button className="boton boton--primario" disabled={ocupado} onClick={() => void entrar()}>
-            {account ? 'Entrar a la tienda' : 'Iniciar sesión'}
-          </button>
-        </div>
-      </section>
+      </footer>
     </div>
   );
 }

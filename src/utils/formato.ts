@@ -12,7 +12,7 @@ export function formatearPesos(valor: number): string {
  * Los microservicios corren en UTC y envían fechas sin zona horaria
  * (LocalDateTime). Se interpretan como UTC para mostrarlas en hora local.
  */
-function aFecha(valor: string | Date): Date {
+export function aFecha(valor: string | Date): Date {
   if (valor instanceof Date) {
     return valor;
   }
@@ -24,7 +24,7 @@ export function formatearFecha(valor: string | Date): string {
   const fecha = aFecha(valor);
   return Number.isNaN(fecha.getTime())
     ? '—'
-    : fecha.toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' });
+    : fecha.toLocaleString('es-CL', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 export function formatearHora(valor: string | Date): string {

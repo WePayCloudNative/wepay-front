@@ -1,3 +1,5 @@
+import type { DireccionGuardada } from './direccion';
+
 export type EstadoPedido =
   | 'CREADO'
   | 'ACEPTADO'
@@ -6,24 +8,42 @@ export type EstadoPedido =
   | 'ENTREGADO'
   | 'CANCELADO';
 
+/** Un producto dentro de un pedido (ms-pedidos lo guarda con el precio del momento de la compra). */
+export type DetallePedido = {
+  productoId: number | null;
+  nombreProducto: string;
+  precioUnitario: number;
+  cantidad: number;
+};
+
 export type Pedido = {
   id: number;
   usuarioOid: string;
   total: number;
   fechaRegistro: string;
   estado: EstadoPedido;
+  /** Puede faltar si el BFF o ms-pedidos desplegados aún no la envían. */
+  detalles?: DetallePedido[] | null;
 };
 
 export type Producto = {
+  id: number;
   name: string;
   description: string;
   price: number;
+  categoria?: string | null;
+  imagenUrl?: string | null;
+  /** Precio antes de la oferta; null si el producto no está en oferta. */
+  precioAnterior?: number | null;
 };
 
 export type ItemCarrito = {
+  productoId: number;
   nombre: string;
   precio: number;
   cantidad: number;
+  imagenUrl?: string | null;
+  categoria?: string | null;
 };
 
 export type Perfil = {
@@ -31,6 +51,8 @@ export type Perfil = {
   nombre: string;
   email: string;
   rol: string;
+  /** Dirección guardada en ms-clientes; null si aún no la guarda. */
+  direccion?: DireccionGuardada | null;
 };
 
 /** Camino normal de un pedido, en orden. CANCELADO queda fuera porque corta el flujo. */
@@ -53,13 +75,41 @@ export const ETIQUETA_ESTADO: Record<EstadoPedido, string> = {
   CANCELADO: 'Cancelado',
 };
 
+/** Cómo se le explica cada estado al cliente, sin lenguaje técnico. */
+export const ESTADO_PARA_CLIENTE: Record<EstadoPedido, { titulo: string; detalle: string }> = {
+  CREADO: {
+    titulo: 'Recibimos tu pedido',
+    detalle: 'Estamos validando el pago. Te avisaremos apenas se confirme.',
+  },
+  ACEPTADO: {
+    titulo: 'Pago confirmado',
+    detalle: 'Generamos tu boleta y el pedido pasó a la fila de preparación.',
+  },
+  EN_PREPARACION: {
+    titulo: 'Preparando tu pedido',
+    detalle: 'Estamos reuniendo y embalando tus productos.',
+  },
+  DESPACHADO: {
+    titulo: 'En camino',
+    detalle: 'Tu pedido salió de nuestra bodega. Te enviamos un SMS con el aviso.',
+  },
+  ENTREGADO: {
+    titulo: 'Entregado',
+    detalle: 'Tu pedido llegó. Que lo disfrutes.',
+  },
+  CANCELADO: {
+    titulo: 'Pedido cancelado',
+    detalle: 'Este pedido no seguirá avanzando.',
+  },
+};
+
 /** Texto del botón que lleva un pedido a cada estado (vista de administración). */
 export const ACCION_HACIA: Record<EstadoPedido, string> = {
   CREADO: 'Crear',
-  ACEPTADO: 'Aceptar',
-  EN_PREPARACION: 'Preparar',
+  ACEPTADO: 'Aceptar pago',
+  EN_PREPARACION: 'Pasar a preparación',
   DESPACHADO: 'Despachar',
-  ENTREGADO: 'Entregar',
+  ENTREGADO: 'Marcar entregado',
   CANCELADO: 'Cancelar',
 };
 
@@ -76,6 +126,17 @@ export const TRANSICIONES: Record<EstadoPedido, EstadoPedido[]> = {
   CANCELADO: [],
 };
 
+/** El cliente solo puede cancelar antes de que el pedido entre a preparación (igual que el BFF). */
+export const CANCELABLES_POR_CLIENTE: EstadoPedido[] = ['CREADO', 'ACEPTADO'];
+
+/** Estados en que el pedido ya tiene boleta emitida (se factura al aceptar). */
+export const ESTADOS_CON_BOLETA: EstadoPedido[] = [
+  'ACEPTADO',
+  'EN_PREPARACION',
+  'DESPACHADO',
+  'ENTREGADO',
+];
+
 export function estadosSiguientes(actual: EstadoPedido): EstadoPedido[] {
   return TRANSICIONES[actual] ?? [];
 }
@@ -84,7 +145,50 @@ export function esEstadoFinal(estado: EstadoPedido): boolean {
   return estadosSiguientes(estado).length === 0;
 }
 
+export function unidadesDe(pedido: Pedido): number {
+  return (pedido.detalles ?? []).reduce((suma, d) => suma + d.cantidad, 0);
+}
+
 /** ms-clientes devuelve el rol en minúsculas ("admin" / "user"). */
 export function tieneRolAdmin(perfil: Perfil | null): boolean {
   return perfil?.rol?.toUpperCase() === 'ADMIN';
+}
+
+/**
+ * Minutos que un pedido puede llevar en cada estado antes de pedir atención.
+ * Se mide desde la compra (fechaRegistro), que es la fecha que entrega ms-pedidos.
+ */
+export const LIMITE_ESPERA_MINUTOS: Partial<Record<EstadoPedido, number>> = {
+  CREADO: 30,
+  ACEPTADO: 2 * 60,
+  EN_PREPARACION: 24 * 60,
+};
+
+export type PedidoAtascado = { pedido: Pedido; minutos: number };
+
+/** Pedidos que superaron el límite de su estado, los más antiguos primero. */
+export function pedidosAtascados(
+  pedidos: Pedido[],
+  aFechaPedido: (p: Pedido) => Date,
+  ahora: Date = new Date(),
+): PedidoAtascado[] {
+  return pedidos
+    .map((pedido) => ({
+      pedido,
+      minutos: Math.floor((ahora.getTime() - aFechaPedido(pedido).getTime()) / 60_000),
+    }))
+    .filter(({ pedido, minutos }) => {
+      const limite = LIMITE_ESPERA_MINUTOS[pedido.estado];
+      return limite !== undefined && minutos > limite;
+    })
+    .sort((a, b) => b.minutos - a.minutos);
+}
+
+/** 45 → "45 min", 150 → "2 h", 3000 → "2 días" */
+export function tiempoEsperando(minutos: number): string {
+  if (minutos < 60) return `${minutos} min`;
+  const horas = Math.floor(minutos / 60);
+  if (horas < 24) return `${horas} h`;
+  const dias = Math.floor(horas / 24);
+  return dias === 1 ? '1 día' : `${dias} días`;
 }

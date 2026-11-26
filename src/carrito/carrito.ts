@@ -2,14 +2,21 @@ import { createContext, useContext } from 'react';
 
 import type { ItemCarrito, Producto } from '../domain/pedidos';
 
+export const MAXIMO_POR_PRODUCTO = 10;
+
 export type Carrito = {
   items: ItemCarrito[];
   unidades: number;
   total: number;
-  agregar: (producto: Producto) => void;
-  cambiarCantidad: (nombre: string, cantidad: number) => void;
-  quitar: (nombre: string) => void;
+  /** Panel lateral del carrito */
+  abierto: boolean;
+  abrir: () => void;
+  cerrar: () => void;
+  agregar: (producto: Producto, cantidad?: number) => void;
+  cambiarCantidad: (productoId: number, cantidad: number) => void;
+  quitar: (productoId: number) => void;
   vaciar: () => void;
+  cantidadDe: (productoId: number) => number;
 };
 
 export const CarritoContext = createContext<Carrito | null>(null);

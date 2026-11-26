@@ -10,14 +10,14 @@ export default function RutaAdmin({ children }: { children: ReactNode }) {
   const { esAdmin, cargando, error, recargarPerfil } = useSesion();
 
   if (cargando) {
-    return <EstadoCarga texto="Verificando permisos..." />;
+    return <EstadoCarga texto="Verificando permisos..." pantalla />;
   }
   if (error) {
     return (
-      <main className="pagina">
+      <main className="contenedor seccion">
         <Aviso tipo="error">
           No se pudo cargar tu perfil: {error}{' '}
-          <button className="boton boton--chico" onClick={recargarPerfil}>
+          <button className="enlace-sutil" onClick={recargarPerfil}>
             Reintentar
           </button>
         </Aviso>
@@ -25,7 +25,7 @@ export default function RutaAdmin({ children }: { children: ReactNode }) {
     );
   }
   if (!esAdmin) {
-    return <Navigate replace to="/tienda" />;
+    return <Navigate replace to="/inicio" />;
   }
   return <>{children}</>;
 }
